@@ -42,11 +42,31 @@ class qformat_speedwell_csv extends qformat_default {
 
 
     public function readquestions($lines) {
-        $rows = array();
+
+     //   $this->error(phpversion());
+        $fp = fopen("php://temp","r+");
         foreach ($lines as $line) {
-             $row = str_getcsv($line,$delimiter = ',',$enclosure = '"');
-            $rows[] = $row;
+            fputs($fp,$line);
         }
+        rewind($fp);
+        $rows = array();
+        while (($data = fgetcsv($fp, 0, ",")) !== FALSE) {
+
+            $rows[] = $data;
+   //         $this->error(count($data));
+        }
+
+        fclose($fp);
+       
+
+        
+
+        //foreach ($lines as $line) {
+        //    $this->error($line);
+        //     $row = str_getcsv($line,$delimiter = ',',$enclosure = '"');
+        //     $this->error(count($row)) ;
+        //    $rows[] = $row;
+        //}
         $questions = array();
         $question = $this->defaultquestion();
 
@@ -54,21 +74,22 @@ class qformat_speedwell_csv extends qformat_default {
         $questionNumber = 0;
         foreach ($rows as $row) {
          
-            if ($row[0] == "Title") {
+            if ($row[0] == "Question Text") {
                 
                 continue;
             }
 
+            
             if (!empty($row[0])) {
                 $questionNumber = 0;
 
 
                 $question = $this->defaultquestion();
                 $question->qtype = 'multichoice';
-                $question->name = $this->create_default_question_name($row[1], get_string('questionname', 'question'));
-                $question->questiontext = htmlspecialchars($row[1], ENT_NOQUOTES);
+                $question->name = $this->create_default_question_name($row[0], get_string('questionname', 'question'));
+                $question->questiontext = htmlspecialchars($row[0], ENT_NOQUOTES);
                 $question->questiontextformat = FORMAT_PLAIN;
-                $question->generalfeedback = htmlspecialchars($row[2], ENT_NOQUOTES);
+                $question->generalfeedback = htmlspecialchars($row[1], ENT_NOQUOTES);
                 $question->generalfeedbackformat = FORMAT_PLAIN;
                 $question->single = 1;
                 $question->answer = array();
@@ -78,7 +99,7 @@ class qformat_speedwell_csv extends qformat_default {
                 $question->partiallycorrectfeedback = $this->text_field('');
                 $question->incorrectfeedback = $this->text_field('');
 
-                $rightans = ord($row[3]) - ord('a');
+                $rightans = ord(strtolower($row[2])) - ord('a');
 
 
                 $questions[] = $question;
@@ -93,7 +114,7 @@ class qformat_speedwell_csv extends qformat_default {
 
           //  $this->error($row[5])  ;
 
-            $question->answer[$questionNumber] = $this->text_field(htmlspecialchars($row[5], ENT_NOQUOTES));
+            $question->answer[$questionNumber] = $this->text_field(htmlspecialchars($row[4], ENT_NOQUOTES));
             $question->feedback[] = $this->text_field('');
 
 
@@ -103,7 +124,7 @@ class qformat_speedwell_csv extends qformat_default {
 
 
 
-        
+      // $this->error(count($questions));
 
         return $questions;
     }
